@@ -1,0 +1,358 @@
+package com.techprimers.security.jwtsecurity.config;
+
+import javax.sql.DataSource;
+
+import org.springframework.batch.core.configuration.JobRegistry;
+import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
+import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer;
+import org.springframework.batch.core.configuration.support.JobRegistryBeanPostProcessor;
+import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.launch.support.SimpleJobLauncher;
+import org.springframework.batch.core.launch.support.SimpleJobOperator;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
+import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+
+@Configuration
+public class AdditionalBatchConfiguration {
+
+	@Autowired
+	JobRegistry jobRegistry;
+	
+	@Autowired
+	JobLauncher jobLauncher;
+	
+	@Autowired
+	JobExplorer jobExplorer;
+	
+	@Autowired
+	JobRepository jobRepository;
+	 
+	 @Bean
+    BatchConfigurer configurer(@Qualifier("batchDataSource") DataSource dataSource){
+      return new DefaultBatchConfigurer(dataSource);
+    }
+
+	 @Primary
+	 @Bean
+	 public PlatformTransactionManager getTransactionManager() {
+	       return new ResourcelessTransactionManager();
+		 //return new DataSourceTransactionManager(dataSource);
+	        
+	        //JpaTransactionManager transactionManager = new JpaTransactionManager();
+	        //transactionManager.setEntityManagerFactory(getTransactionManager().getObject());
+	        //return transactionManager;
+	    }
+	 
+	 /* @Bean 
+	  public JobRepository createJobRepository(@Qualifier("batchDataSource") DataSource dataSource) throws Exception {
+		    JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+		    factory.setDataSource(dataSource);
+		    factory.setTransactionManager(getTransactionManager());
+		    factory.setIsolationLevelForCreate("ISOLATION_READ_COMMITTED");
+		    factory.setTablePrefix("batch_");
+		    factory.setMaxVarCharLength(1000);
+		    return factory.getObject();
+		}*/
+	  
+	
+	  
+	  
+	  
+	  
+	 //@Bean(name="jobRepository")
+	@Bean 
+	 public JobRepository getJobRepository(@Qualifier("batchDataSource") DataSource dataSource) throws Exception {
+	  JobRepositoryFactoryBean factoryBean = new JobRepositoryFactoryBean();
+	  factoryBean.setDataSource(dataSource);
+	  factoryBean.setTransactionManager(getTransactionManager());
+	  //factoryBean.setIsolationLevelForCreate("ISOLATION_READ_COMMITTED");
+	  //factoryBean.setIsolationLevelForCreate("ISOLATION_SERIALIZABLE");
+	  factoryBean.setIsolationLevelForCreate("ISOLATION_READ_UNCOMMITTED");
+	  factoryBean.setTablePrefix("batch_");
+	 
+		factoryBean.afterPropertiesSet();
+
+	  System.out.println("JobRepository bean could not be initialized");
+	
+	  return factoryBean.getObject();
+	 
+	  }
+	   
+	  @Bean
+	  public JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor(JobRegistry jobRegistry) {
+	  JobRegistryBeanPostProcessor jobRegistryBeanPostProcessor = new JobRegistryBeanPostProcessor();
+	  jobRegistryBeanPostProcessor.setJobRegistry(jobRegistry);
+	  return jobRegistryBeanPostProcessor;
+	  }
+	   
+	  @Bean
+	  public JobLauncher jobLauncher(){
+	  SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
+	  jobLauncher.setJobRepository(jobRepository);
+	  return jobLauncher;
+	  }
+	   
+	  @Bean
+	  public JobOperator jobOperator() {
+	  SimpleJobOperator jobOperator = new SimpleJobOperator();
+	  jobOperator.setJobExplorer(jobExplorer);
+	  jobOperator.setJobLauncher(jobLauncher);
+	  jobOperator.setJobRegistry(jobRegistry);
+	  jobOperator.setJobRepository(jobRepository);
+	  return jobOperator;
+	  }
+	  
+}
+
+
+=========================================
+
+
+package com.techprimers.security.jwtsecurity.config;
+import javax.sql.DataSource;
+
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
+import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.PlatformTransactionManager;
+
+
+@Configuration
+public class DBPropertiesConfig { 
+  
+	 @Autowired
+	    private Environment env;
+	 
+	 /* @Primary
+	  @Bean("batchDataSource")
+	  @ConfigurationProperties("batch.datasource") 
+	  public DataSource
+	  batchDataSource() {
+		  System.out.println("Batch.........");
+		  //return new HikariDataSource();
+		 return DataSourceBuilder.create().build();
+		  }
+	
+	  @Bean("schedulerDataSource")
+	  @ConfigurationProperties("scheduler.datasource") 
+	  public DataSource
+	  schedulerDataSource() {
+		  System.out.println("Scheduler.........");
+		  //return new HikariDataSource();
+		 return DataSourceBuilder.create().build();
+		  }*/
+	
+	  
+	  
+	  @Primary
+	  @Bean("batchDataSource")
+	  public DataSource batchDataSource() {
+
+	      DriverManagerDataSource dataSource = new DriverManagerDataSource();
+	      dataSource.setDriverClassName(env.getProperty("batch.datasource.driver-class-name"));
+	      dataSource.setUrl(env.getProperty("batch.datasource.url"));
+	      dataSource.setUsername(env.getProperty("batch.datasource.username"));
+	      dataSource.setPassword(env.getProperty("batch.datasource.password"));
+
+	      System.out.println("batchDataSource>>>dataSource@@@@@@@"+dataSource);
+	      return dataSource;
+
+	  }
+	  
+	   
+	  //@Primary
+	  @Bean("schedulerDataSource")
+	  public DataSource schedulerDataSource() {
+
+	      DriverManagerDataSource dataSource = new DriverManagerDataSource();
+	      dataSource.setDriverClassName(env.getProperty("scheduler.datasource.driver-class-name"));
+	      dataSource.setUrl(env.getProperty("scheduler.datasource.url"));
+	      dataSource.setUsername(env.getProperty("scheduler.datasource.username"));
+	      dataSource.setPassword(env.getProperty("scheduler.datasource.password"));
+
+	      System.out.println("schedulerDataSource>>>>>>dataSource"+dataSource);
+	      return dataSource;
+
+	  }
+	 
+	
+}
+
+
+
+
+==========================================
+
+
+package com.techprimers.security.jwtsecurity.config;
+
+import javax.sql.DataSource;
+
+import org.quartz.DisallowConcurrentExecution;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
+import org.springframework.batch.core.configuration.annotation.DefaultBatchConfigurer;
+import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
+import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import com.tap.task.MyTaskOne;
+import com.tap.task.MyTaskTwo;
+
+@Configuration
+@EnableBatchProcessing
+@DisallowConcurrentExecution
+@Import(AdditionalBatchConfiguration.class)
+public class BatchConfig {
+    /* 
+	 @Bean
+     BatchConfigurer configurer(@Qualifier("batchDataSource") DataSource dataSource){
+       return new DefaultBatchConfigurer(dataSource);
+     }
+
+	 public PlatformTransactionManager getTransactionManager() {
+	        return new ResourcelessTransactionManager();
+	    }
+	 
+	  @Bean 
+	  public JobRepository createJobRepository(@Qualifier("batchDataSource") DataSource dataSource) throws Exception {
+		    JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+		    factory.setDataSource(dataSource);
+		    factory.setTransactionManager(getTransactionManager());
+		    factory.setIsolationLevelForCreate("ISOLATION_READ_COMMITTED");
+		    factory.setTablePrefix("batch_");
+		    factory.setMaxVarCharLength(1000);
+		    return factory.getObject();
+		}
+	  */
+	
+    @Autowired
+    private JobBuilderFactory jobs;
+ 
+    @Autowired
+    private StepBuilderFactory steps;
+     
+    @Bean
+    public Step stepOne(){
+        return steps.get("stepOne")
+                .tasklet(new MyTaskOne())
+                .build();
+    }
+     
+    @Bean
+    public Step stepTwo(){
+        return steps.get("stepTwo")
+                .tasklet(new MyTaskTwo())
+                .build();
+    }  
+     
+    @Bean
+    @Primary
+    public Job demoJob(){
+        return jobs.get("demoJob")
+                .incrementer(new RunIdIncrementer())
+                .start(stepOne())
+                .next(stepTwo())
+                .build();
+    }
+    
+    @Bean
+    public Job demoJob1(){
+        return jobs.get("demoJob1")
+                .incrementer(new RunIdIncrementer())
+                .start(stepTwo())
+                //.next(stepTwo())
+                .build();
+    }
+    
+    
+   /* @Bean
+    public Job capitalizeNamesJob(JobBuilderFactory jobBuilders, StepBuilderFactory stepBuilders) {
+      return jobBuilders.get("EmailNotificationJob")
+          .start(readMailTemplateStep(stepBuilders))
+          .build();
+          //.next(sendMailStep(stepBuilders)).build();
+    }
+    
+    
+    @Bean
+    public Step readMailTemplateStep(StepBuilderFactory stepBuilders) {
+      return stepBuilders.get("MailTemplateStep")
+          .<Person, Person>chunk(10).reader(MailItemReader())
+          .processor(MailItemProcessor()).writer(MailItemWriter()).build();
+    }
+*/
+ 
+    
+    
+    
+}
+
+
+=======================
+
+
+server.port = 8087
+
+spring.application.name=Scheduledemo
+
+spring.batch.job.enabled=false
+#spring.batch.initializer.enabled=false
+
+spring.main.allow-bean-definition-overriding=true
+
+
+####### POSTGRES ############
+batch.datasource.driver-class-name=org.postgresql.Driver
+batch.datasource.url=jdbc:postgresql://localhost:5432/postgres?currentSchema=public
+batch.datasource.username=postgres
+batch.datasource.password=gaurav
+####### POSTGRES ############
+
+
+####### POSTGRES ############
+scheduler.datasource.driver-class-name=org.postgresql.Driver
+scheduler.datasource.url=jdbc:postgresql://localhost:5432/postgres?currentSchema=public
+scheduler.datasource.username=postgres
+scheduler.datasource.password=gaurav
+####### POSTGRES ############
+
+
+
+
+####### POSTGRES ############
+#spring.datasource.driver-class-name=org.postgresql.Driver
+#spring.datasource.url=jdbc:postgresql://localhost:5432/postgres?currentSchema=public
+#spring.datasource.username=postgres
+#spring.datasource.password=gaurav
+####### POSTGRES ############
+
