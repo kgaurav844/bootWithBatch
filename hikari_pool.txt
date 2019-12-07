@@ -1,0 +1,137 @@
+package com.techprimers.security.jwtsecurity.config;
+import java.io.PrintWriter;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
+
+import com.zaxxer.hikari.HikariDataSource;
+
+@Configuration
+public class DBPropertiesConfig { 
+  
+	 @Autowired
+	    private Environment env;
+	 
+	 /* @Primary
+	  @Bean("batchDataSource")
+	  @ConfigurationProperties("batch.datasource") 
+	  public DataSource batchDataSource1() {
+		  System.out.println("Batch.........");
+		  return new HikariDataSource();
+		 //return DataSourceBuilder.create().build();
+		  }
+	
+	  @Bean("schedulerDataSource")
+	  @ConfigurationProperties("scheduler.datasource") 
+	  public DataSource schedulerDataSource1() {
+		  System.out.println("Scheduler.........");
+		  return new HikariDataSource();
+		 //return DataSourceBuilder.create().build();
+		  }
+	
+	  */
+	  
+	  @Primary
+	  @Bean("batchDataSource")
+	  public DataSource batchDataSource() {
+
+	      //DriverManagerDataSource dataSource = new DriverManagerDataSource();
+		  HikariDataSource dataSource=new HikariDataSource();
+	      dataSource.setDriverClassName(env.getProperty("batch.datasource.driver-class-name"));
+	      dataSource.setJdbcUrl(env.getProperty("batch.datasource.url"));
+	     //dataSource.setUrl(env.getProperty("batch.datasource.url"));
+	      dataSource.setUsername(env.getProperty("batch.datasource.username"));
+	      dataSource.setPassword(env.getProperty("batch.datasource.password"));
+	     
+	      dataSource.setPoolName("SpringBootJPAHikariCP");
+	      dataSource.setMinimumIdle(20);
+	      dataSource.setMaximumPoolSize(50);
+	      dataSource.setIdleTimeout(30000); //30sec
+	      dataSource.setMaxLifetime(1800000);//30min
+	      dataSource.setConnectionTimeout(45000); //45sec
+	      dataSource.setConnectionTestQuery("SELECT 1");
+	      
+	      dataSource.addDataSourceProperty("dataSource.cachePrepStmts", "true");
+	      dataSource.addDataSourceProperty("dataSource.prepStmtCacheSize", "250");
+	      dataSource.addDataSourceProperty("dataSource.prepStmtCacheSqlLimit", "2048");
+	      dataSource.addDataSourceProperty("dataSource.useServerPrepStmts", "true");
+	      
+	      System.out.println("batchDataSource>>>dataSource@@@@@@@"+dataSource);
+	      return dataSource;
+
+	  }
+	  
+	   
+	  @Bean("schedulerDataSource")
+	  public DataSource schedulerDataSource() {
+
+	     // DriverManagerDataSource dataSource = new DriverManagerDataSource();
+		  HikariDataSource dataSource=new HikariDataSource();
+	      dataSource.setDriverClassName(env.getProperty("scheduler.datasource.driver-class-name"));
+	      dataSource.setJdbcUrl(env.getProperty("scheduler.datasource.url"));
+	      //dataSource.setUrl(env.getProperty("scheduler.datasource.url"));
+	      dataSource.setUsername(env.getProperty("scheduler.datasource.username"));
+	      dataSource.setPassword(env.getProperty("scheduler.datasource.password"));
+
+	      dataSource.setPoolName("SpringBootJPAHikariCP_schedulerDataSource");
+	      dataSource.setMinimumIdle(20);
+	      dataSource.setMaximumPoolSize(50);
+	      dataSource.setIdleTimeout(30000); //30sec
+	      dataSource.setMaxLifetime(1800000);//30min
+	      dataSource.setConnectionTimeout(45000); //45sec
+	      dataSource.setConnectionTestQuery("SELECT 1");
+	      System.out.println("schedulerDataSource>>>>>>dataSource"+dataSource);
+	      return dataSource;
+
+	  }
+ 
+	
+	 }
+
+
+	 
+	 ========================
+	 
+	 
+	 
+	 server.port = 8087
+
+spring.application.name=Scheduledemo
+
+spring.batch.job.enabled=false
+#spring.batch.initializer.enabled=false
+
+spring.main.allow-bean-definition-overriding=true
+
+logging.level.com.zaxxer.hikari.HikariConfig=DEBUG 
+
+####### POSTGRES ############
+batch.datasource.driver-class-name=org.postgresql.Driver
+batch.datasource.url=jdbc:postgresql://localhost:5432/postgres?currentSchema=public
+batch.datasource.username=postgres
+batch.datasource.password=gaurav
+####### POSTGRES ############
+
+
+####### POSTGRES ############
+scheduler.datasource.driver-class-name=org.postgresql.Driver
+scheduler.datasource.url=jdbc:postgresql://localhost:5432/postgres?currentSchema=public
+scheduler.datasource.username=postgres
+scheduler.datasource.password=gaurav
+####### POSTGRES ############
+
+
+
+
+####### POSTGRES ############
+#spring.datasource.driver-class-name=org.postgresql.Driver
+#spring.datasource.url=jdbc:postgresql://localhost:5432/postgres?currentSchema=public
+#spring.datasource.username=postgres
+#spring.datasource.password=gaurav
+####### POSTGRES ############
+
